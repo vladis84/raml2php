@@ -1,0 +1,16 @@
+{
+    "name": "vladis/raml2php",
+    "authors": [
+        {
+            "name": "vladis",
+            "email": "gordienkovladis@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "ext-yaml": ">=2.0.2"
+    },
+    "autoload": {
+        "psr-0": { "": "src/" }
+    }
+}
