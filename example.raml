@@ -1,0 +1,16 @@
+#%RAML 1.0
+title: New API
+mediaType: application/json
+types:
+  Person:
+    type: object
+    description: Фамилия
+    required: true
+    properties:
+      firstname:
+        type: string
+        description: Фамилия
+        required: true
+        pattern: ^\w+$
+      lastname: string
+      is_our_employee: boolean
