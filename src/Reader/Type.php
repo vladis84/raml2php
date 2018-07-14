@@ -1,6 +1,6 @@
 <?php
 
-namespace Source;
+namespace Reader;
 
 /**
  */
@@ -22,15 +22,23 @@ class Type
 
     /**
      * Обязательность
-     * 
+     *
      * @var boolean
      */
     public $required;
 
     /**
+     * Название
      *
      * @var string
      */
     public $name;
+
+    /**
+     * Список свойств
+     *
+     * @var self[]
+     */
+    public $properties = [];
 }
 

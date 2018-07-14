@@ -1,6 +1,7 @@
 <?php
 
-use Source\BuilderFactory;
+use Reader\BuilderFactory;
+use Reader\Source;
 
 class Reader
 {
@@ -16,14 +17,15 @@ class Reader
      */
     private $source;
 
-    public function __construct(array $ramlData)
+    public function __construct()
     {
-        $this->ramlData = $ramlData;
         $this->source = new Source();
     }
 
-    public function read(): Source
-    {       
+    public function read(array $ramlData): Source
+    {
+        $this->ramlData = $ramlData;
+
         $this->fillTypes();
         
         return $this->source;
@@ -32,15 +34,12 @@ class Reader
     private function fillTypes()
     {
         $rawTypes = $this->ramlData['types'] ?? [];
-        
+
         foreach ($rawTypes as $typeName => $rawType) {
             $builder = BuilderFactory::make($rawType);
 
-            $type = $builder->make($rawType);
-            $type->name = $typeName;
-            $this->source->types[] = $type;
+            $type = $builder->make($typeName, $rawType);
+            $this->source->addType($type);
         }
-
-        print_r($this->source);
     }
 }

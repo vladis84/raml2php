@@ -1,8 +1,8 @@
 <?php
 
-namespace Source\Type;
+namespace Reader\Type;
 
-use Source\Type;
+use Reader\Type;
 
 class ArrayType extends Type
 {

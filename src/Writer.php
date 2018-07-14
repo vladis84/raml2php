@@ -1,32 +1,48 @@
 <?php
 
+use PhpCodeMaker\PhpClass;
+use Reader\{
+    Source, Type
+};
+
 class Writer
 {
-    private $templatePath;
     private $outputDir;
 
-    public function __construct($templatePath = null, $outputDir)
+    public function __construct($outputDir)
     {
-        $this->templatePath = $templatePath;
         $this->outputDir = $outputDir;
     }
 
     public function write(Source $source)
     {
-        /* @var $type Source\Type */
-        foreach ($source->types as $type) {
-            ob_start();
-            require "{$this->templatePath}/{$type->type}.php";
-            $fileContent = ob_get_clean();
-            file_put_contents("{$this->outputDir}/{$type->name}.php", $fileContent);
+        $types = $source->getTypes();
+        foreach ($types->getList() as $type) {
+            $this->writeType($type);
         }
-
-//        $this->formartCode();
     }
 
-    private function formartCode()
+    private function writeType(Type $type, string $parent = '')
     {
-        echo __DIR__ . "/../vendor/bin/php-cs-fixer fix {$this->outputDir}";
-        exec(__DIR__ . "/../vendor/bin/php-cs-fixer fix {$this->outputDir}");
+        $phpClass = new PhpClass();
+
+        $className = ucfirst($type->name);
+
+        $phpClass
+            ->setName($className)
+            ->setInherits($parent)
+            ->setDescription($type->description)
+            ->setNamespace('Test');
+
+        foreach ($type->properties as $property) {
+            $phpClass->makePublicProperty($property->name, $property->description);
+            if (!in_array($property->type, ['integer', 'string', 'boolean']) && $property->properties) {
+                $parent = $property->type == 'object' ? '' : $property->type;
+                $this->writeType($property, $parent);
+            }
+        }
+
+        $filename = sprintf('%s/%s.php', $this->outputDir, $className);
+        file_put_contents($filename, $phpClass);
     }
 }

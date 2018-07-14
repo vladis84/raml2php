@@ -6,11 +6,22 @@
             "email": "gordienkovladis@gmail.com"
         }
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git@github.com:vladis84/php-code-maker.git",
+            "svn-cache-credentials": false
+        }
+    ],
     "require": {
         "php": ">=7.0",
-        "ext-yaml": ">=2.0.2"
+        "ext-yaml": ">=2.0.2",
+        "php-code-maker": "dev-master"
     },
     "autoload": {
-        "psr-0": { "": "src/" }
-    }
+        "psr-0": {
+            "": "src/"
+        }
+    },
+    "minimum-stability": "dev"
 }
