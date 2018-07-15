@@ -6,6 +6,5 @@ use Reader\Type;
 
 class ArrayType extends Type
 {
-    
 }
 

@@ -1,7 +1,8 @@
 <?php
 
-use Reader\BuilderFactory;
-use Reader\Source;
+use Reader\{
+    Source, TypeBuilder
+};
 
 class Reader
 {
@@ -12,7 +13,7 @@ class Reader
     private $ramlData;
 
     /**
-     * 
+     *
      * @var Source
      */
     private $source;
@@ -27,17 +28,16 @@ class Reader
         $this->ramlData = $ramlData;
 
         $this->fillTypes();
-        
+
         return $this->source;
     }
 
     private function fillTypes()
     {
         $rawTypes = $this->ramlData['types'] ?? [];
+        $builder  = new TypeBuilder();
 
         foreach ($rawTypes as $typeName => $rawType) {
-            $builder = BuilderFactory::make($rawType);
-
             $type = $builder->make($typeName, $rawType);
             $this->source->addType($type);
         }

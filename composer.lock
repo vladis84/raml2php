@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/vladis84/php-code-maker.git",
-                "reference": "0b23cd989b76499bc0cb96ab8b69ca23b8bc1982"
+                "reference": "e95abaabdbee0882294f4a10d7524e0247944dd1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vladis84/php-code-maker/zipball/0b23cd989b76499bc0cb96ab8b69ca23b8bc1982",
-                "reference": "0b23cd989b76499bc0cb96ab8b69ca23b8bc1982",
+                "url": "https://api.github.com/repos/vladis84/php-code-maker/zipball/e95abaabdbee0882294f4a10d7524e0247944dd1",
+                "reference": "e95abaabdbee0882294f4a10d7524e0247944dd1",
                 "shasum": ""
             },
             "require": {
@@ -47,7 +47,7 @@
                 "source": "https://github.com/vladis84/php-code-maker/tree/master",
                 "issues": "https://github.com/vladis84/php-code-maker/issues"
             },
-            "time": "2018-07-14T14:37:26+00:00"
+            "time": "2018-07-15T04:09:32+00:00"
         }
     ],
     "packages-dev": [],

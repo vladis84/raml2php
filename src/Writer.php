@@ -4,6 +4,7 @@ use PhpCodeMaker\PhpClass;
 use Reader\{
     Source, Type
 };
+use Writer\TypeBuilder;
 
 class Writer
 {
@@ -32,10 +33,16 @@ class Writer
             ->setName($className)
             ->setInherits($parent)
             ->setDescription($type->description)
-            ->setNamespace('Test');
+            ->setNamespace('Test')
+        ;
 
         foreach ($type->properties as $property) {
-            $phpClass->makePublicProperty($property->name, $property->description);
+            $phpProperty = $phpClass->makeProperty($property->name, $property->description);
+            $phpProperty->addPhpDoc('@var', $property->type);
+            if ($property->required) {
+                $phpProperty->addPhpDoc('@required');
+            }
+
             if (!in_array($property->type, ['integer', 'string', 'boolean']) && $property->properties) {
                 $parent = $property->type == 'object' ? '' : $property->type;
                 $this->writeType($property, $parent);

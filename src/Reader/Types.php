@@ -23,7 +23,5 @@ class Types
     {
         return $this->list;
     }
-
-
 }
 
