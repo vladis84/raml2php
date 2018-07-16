@@ -28,7 +28,8 @@ if (!is_writable($outputDir)) {
 }
 
 if ($filePath) {
-    $yaml = YamlParser::parse($filePath);
+    $parser = new YamlParser();
+    $yaml = $parser->parse($filePath);
 
     $reader = new Reader();
     $source = $reader->read($yaml);
