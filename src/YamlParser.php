@@ -21,6 +21,8 @@ class YamlParser
 
         $source = $this->include($mainFile);
 
+//        die($source);
+
         $yaml = yaml_parse($source);
 
         return $yaml;
@@ -33,7 +35,21 @@ class YamlParser
             function (array $matches) {
                 $spaceCount = substr_count($matches[1], ' ') + 1;
 
-                $content = trim(file_get_contents($this->ramlDir . $matches[2]));
+                $fileName = $this->ramlDir . $matches[2];
+                if (file_exists($fileName)) {
+                    $content = file_get_contents($fileName);
+                }
+                elseif(file_exists($this->ramlDir . 'type/'. $matches[2])) {
+                    $content = file_get_contents($this->ramlDir . 'type/'. $matches[2]);
+
+                }
+                else {
+                    $content = file_get_contents($this->ramlDir . 'type/Dictionary/'. $matches[2]);
+                }
+
+                $content = trim(preg_replace('/.+RAML.+/', '', $content));
+                $content = trim(preg_replace('/^\s+$/', '', $content));
+
                 $spaces = str_repeat(' ', $spaceCount);
                 $content = str_replace("\n", "\n" . $spaces, $content);
 
