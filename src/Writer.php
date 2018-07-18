@@ -40,9 +40,6 @@ class Writer
         foreach ($type->properties as $property) {
             $phpProperty = $phpClass->makeProperty($property->name, $property->description);
             $propetyType = str_replace(['numeric'], ['float'], $property->type);
-            if(is_array($propetyType)) {
-                continue;
-            };
             $phpProperty->addPhpDoc('@var', $propetyType);
             if ($property->required) {
                 $phpProperty->addPhpDoc('@required');
