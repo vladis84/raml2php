@@ -7,6 +7,8 @@
  */
 class YamlParser
 {
+    private $includes = [];
+
     /**
      * @param string $filePath
      *
@@ -14,12 +16,13 @@ class YamlParser
      */
     public function parse($filePath): array
     {
-        $ramlDir = dirname($filePath);
+        $ramlDir        = dirname($filePath);
         $currentWorkDir = getcwd();
         chdir($ramlDir);
 
         $mainFile = file_get_contents($filePath);
-        $source = $this->include($mainFile);
+        $source   = $this->include($mainFile);
+        $source   = $this->insertIncludes($source);
         chdir($currentWorkDir);
 
         $yaml = yaml_parse($source);
@@ -30,20 +33,26 @@ class YamlParser
     private function include(string $source): string
     {
         $source = preg_replace_callback(
-            '/(.+)\!include\s+(.+)/',
+            '/(?<declaration>.+)\!include\s+(?<file>.+)/',
             function (array $matches) {
-                $spaceCount = substr_count($matches[1], " ") + 1;
+                $dir         = dirname($matches['file']);
+                $contentType = basename($matches['file'], '.raml');
 
-                $currentDir = dirname($matches[2]);
-                $content = file_get_contents($matches[2]);
-                $content = preg_replace('~\!include\s+.*(.+\.raml)~U', "!include {$currentDir}/$1", $content);
-
+                $content = file_get_contents($matches['file']);
                 $content = trim(preg_replace(['/.+raml.+/i', '/^\s+$/'], ['', ''], $content));
+                $content = preg_replace('~\!include\s+(.*\w+\.raml)~U', "!include {$dir}/$1", $content);
 
-                $spaces = str_repeat(' ', $spaceCount);
-                $content = str_replace("\n", "\n" . $spaces, $content);
+                if (trim($matches['declaration']) != 'type:') {
+                    $spaceCount = substr_count($matches['declaration'], ' ') + 1;
+                    $spaces     = str_repeat(' ', $spaceCount);
+                    $content    = str_replace("\n", "\n" . $spaces, $content);
+                    $content    = $matches['declaration'] . "\n" . $spaces . $content;
+                } else {
+                    $this->includes[$contentType] = $content;
+                    $content                      = $matches['declaration'] . ' ' . $contentType;
+                }
 
-                return $matches[1] . "\n" . $spaces . $content;
+                return $content;
             },
             $source
         );
@@ -51,6 +60,22 @@ class YamlParser
         if (strpos($source, '!include')) {
             return $this->include($source);
         }
+
+        return $source;
+    }
+
+    private function insertIncludes(string $source): string
+    {
+        $includes = '';
+        foreach ($this->includes as $type => $include) {
+            if (strpos($include, '!include')) {
+                $include = $this->include($include);
+            }
+            $include = str_replace("\n", "\n    ", $include);
+            $includes.= "  {$type}: \n    {$include}\n";
+        }
+
+        $source = str_replace('types:', "types:\n" . $includes, $source);
 
         return $source;
     }
