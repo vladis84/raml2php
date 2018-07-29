@@ -42,7 +42,7 @@ class YamlParser
                 $content = trim(preg_replace(['/.+raml.+/i', '/^\s+$/'], ['', ''], $content));
                 $content = preg_replace('~\!include\s+(.*\w+\.raml)~U', "!include {$dir}/$1", $content);
 
-                if (trim($matches['declaration']) != 'type:') {
+                if (trim($matches['declaration']) != 'type:' || !strpos($content, 'object')) {
                     $spaceCount = substr_count($matches['declaration'], ' ') + 1;
                     $spaces     = str_repeat(' ', $spaceCount);
                     $content    = str_replace("\n", "\n" . $spaces, $content);
@@ -71,8 +71,8 @@ class YamlParser
             if (strpos($include, '!include')) {
                 $include = $this->include($include);
             }
-            $include = str_replace("\n", "\n    ", $include);
-            $includes.= "  {$type}: \n    {$include}\n";
+            $include  = str_replace("\n", "\n    ", $include);
+            $includes .= "  {$type}: \n    {$include}\n";
         }
 
         $source = str_replace('types:', "types:\n" . $includes, $source);
