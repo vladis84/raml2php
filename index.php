@@ -2,9 +2,9 @@
 
 require './vendor/autoload.php';
 
-$filePath     = null;
-$templatePath = __DIR__ . '/template';
-$outputDir    = null;
+$filePath  = null;
+$outputDir = null;
+$nameSpace = null;
 
 while ($param = array_shift($argv)) {
     list($paramName, $paramValue) = explode('=', $param) + ['', ''];
@@ -15,6 +15,10 @@ while ($param = array_shift($argv)) {
 
         case '--output-dir':
             $outputDir = $paramValue;
+            break;
+
+        case '--name-space':
+            $nameSpace = $paramValue;
             break;
     }
 }
@@ -28,13 +32,12 @@ if (!is_writable($outputDir)) {
 }
 
 if ($filePath) {
-    $parser = new YamlParser();
-    $yaml = $parser->parse($filePath);
+    $rawData = YamlParser::parse($filePath);
 
-    $reader = new Reader();
-    $source = $reader->read($yaml);
+    $parser = new Parser();
+    $data = $parser->parse($rawData);
 
     $writer = new Writer($outputDir);
-    $writer->write($source);
+    $writer->write($data);
 }
 

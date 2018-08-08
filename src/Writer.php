@@ -1,10 +1,7 @@
 <?php
 
 use PhpCodeMaker\PhpClass;
-use Reader\{
-    Source, Type
-};
-use Writer\TypeBuilder;
+use PhpCodeMaker\PhpClass\Property;
 
 class Writer
 {
@@ -12,51 +9,52 @@ class Writer
 
     public function __construct($outputDir)
     {
+        exec('rm -rf ' . $outputDir . '/*.*');
         $this->outputDir = $outputDir;
     }
 
-    public function write(Source $source)
+    public function write(array $data)
     {
-        $types = $source->getTypes();
-        foreach ($types->getList() as $type) {
+        foreach ($data['types'] as $type) {
             $this->writeType($type);
         }
     }
 
-    private function writeType(Type $type, string $parent = '')
+    private function writeType(array $type)
     {
         $phpClass = new PhpClass();
+        $phpClass->setName($type['__name__']);
+        $phpClass->setNamespace($type['__nameSpace__']);
 
-        $className = ucfirst($type->name);
+        $types = $type['properties'];
+        $this->addProperties($phpClass, $types);
 
-        $phpClass
-            ->setName($className)
-            ->setInherits($parent)
-            ->setDescription($type->description)
-            ->setNamespace('API\\Rail\\V1\\Element')
-        ;
+        $fileName = sprintf('%s/%s.php', $this->outputDir, $phpClass->getName());
+        file_put_contents($fileName, $phpClass);
+    }
 
+    private function addProperties(PhpClass $phpClass, array $properties)
+    {
+        foreach ($properties as $rawProperty) {
+            $property = new Property();
+            $property->setName($rawProperty['__name__']);
 
-        foreach ($type->properties as $property) {
-            $phpProperty = $phpClass->makeProperty($property->name, $property->description);
-
-            $propertyType = $property->type;
-            if (is_array($propertyType)) {
-                $propertyType = $propertyType['type'] ?? 'string';
+            if (isset($rawProperty['description'])) {
+                $property->addPhpDoc($rawProperty['description']);
             }
 
-            $phpProperty->addPhpDoc('@var', $propertyType);
-            if ($property->required) {
-                $phpProperty->addPhpDoc('@required');
+            $propertyType = $rawProperty['type'];
+            if (isset($rawProperty['example'])) {
+                $propertyType .= ' ' . $rawProperty['example'];
             }
 
-            if (!in_array($property->type, ['integer', 'string', 'boolean']) && $property->properties) {
-                $parent = $property->type == 'object' ? '' : $property->type;
-                $this->writeType($property, $parent);
+            $property->addPhpDoc('@var', $propertyType);
+
+            $phpClass->addProperty($property);
+
+            if (in_array($rawProperty['type'], ['object', 'array'])) {
+                $this->writeType($rawProperty);
             }
         }
-
-        $filename = sprintf('%s/%s.php', $this->outputDir, $className);
-        file_put_contents($filename, $phpClass);
     }
 }
