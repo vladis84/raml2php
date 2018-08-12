@@ -4,10 +4,22 @@ class Parser
 {
     private $data = ['types' => []];
 
-    public function parse(array $rawData): array
+    /**
+     * @var string
+     */
+    private $rootNameSpace;
+
+    public function parse(array $rawData, string $rootNameSpace): array
     {
+        $this->rootNameSpace = $rootNameSpace;
+
         foreach ($rawData['types'] as $rawTypeName => $rawType) {
-            $type                  = $this->parseType($rawType);
+            $rawType['__name__']         = $rawTypeName;
+            $rawType['__nameSpace__']    = $rootNameSpace;
+            $rawType['__relativePath__'] = '';
+
+            $type = $this->parseType($rawType);
+
             $this->data['types'][] = $type;
         }
 
@@ -16,15 +28,22 @@ class Parser
 
     private function parseType(array $rawType): array
     {
-        $type               = $rawType;
-        $rawProperties      = $rawType['properties'] ?? [];
-        $properties         = $this->parseProperties($rawProperties);
+        $type          = $rawType;
+        $rawProperties = $rawType['properties'] ?? [];
+
+        if (strpos($type['__nameSpace__'], $this->rootNameSpace) === false) {
+            $type['__nameSpace__'] = $this->rootNameSpace . '\\' . $type['__nameSpace__'];
+        }
+
+        $type['__uses__'] = $type['__uses__'] ?? [];
+
+        $properties         = $this->parseProperties($rawProperties, $type);
         $type['properties'] = $properties;
 
         return $type;
     }
 
-    private function parseProperties(array $rawProperties): array
+    private function parseProperties(array $rawProperties, array &$type): array
     {
         $properties = [];
 
@@ -35,23 +54,44 @@ class Parser
             }
 
             $property             = $rawProperty;
-            $property['__name__'] = $rawPropertyName ?: $property['__name__'];
-            $type                 = $rawProperty['type'] ?? 'string';
+            $property['__name__'] = $rawPropertyName ?: $property['__name__'];;
 
-            if (is_string($type)) {
+            if (isset($property['enum'])) {
+                $enum                     = $property;
+                $enum['__name__']         = $type['__name__'] . ucfirst($property['__name__']);
+                $enum['__nameSpace__']    = $type['__nameSpace__'];
+                $enum['__relativePath__'] = $type['__relativePath__'];
+                $enum['type']             = 'enum';
+
+                $this->data['types'][] = $enum;
+            }
+
+            // Массивы объектов
+            if (isset($property['items']) && $property['items']['type'] == 'object') {
+                $property['type'] = $property['items']['__name__'] . '[]';
+                $type['__uses__'][]    = $property['items']['__nameSpace__'] . '\\' . $property['items']['__name__'];
+                $this->data['types'][] = $this->parseType($property['items']);
+            }
+
+            $propertyType = $rawProperty['type'] ?? 'string';
+
+            if (is_string($propertyType)) {
                 $properties[] = $property;
                 continue;
             }
 
-            $parent           = $type;
-            $child            = $property;
-            $childProperties  = $child['properties']  ?? [];
+            $parent = $propertyType;
+            $child  = $property;
+
+            $childProperties  = $child['properties'] ?? [];
             $parentProperties = $parent['properties'] ?? [];
-            $diff             = array_diff_assoc($childProperties, $parentProperties);
+
+            $diff = array_diff_assoc($childProperties, $parentProperties);
 
             if ($diff) {// extends
-
+//                $property
             } elseif ($parentProperties) { // include
+                $type['__uses__'][]    = $parent['__nameSpace__'] . '\\' . $parent['__name__'];
                 $property['type']      = $parent['__name__'];
                 $this->data['types'][] = $this->parseType($parent);
             } else {

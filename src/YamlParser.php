@@ -17,8 +17,6 @@ class YamlParser
         $callback   = [];
         $ramlDir    = dirname($filePath) . '/';
         $yaml_parse = function (string $file) use (&$callback, $ramlDir) {
-            $yaml = [];
-
             $prevCwd = getcwd();
             chdir(dirname($file));
             $filePath = basename($file);

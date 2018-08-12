@@ -35,7 +35,7 @@ if ($filePath) {
     $rawData = YamlParser::parse($filePath);
 
     $parser = new Parser();
-    $data = $parser->parse($rawData);
+    $data = $parser->parse($rawData, $nameSpace);
 
     $writer = new Writer($outputDir);
     $writer->write($data);
