@@ -13,10 +13,10 @@ class TypeObjectBuilder implements BuilderInterface
         $phpClass->setName($data['__name__']);
         $phpClass->setNamespace($data['__nameSpace__']);
 
-        $uses = array_unique($data['__uses__']);
-        foreach ($uses as $use) {
-            $phpClass->addUse($use);
-        }
+//        $uses = array_unique($data['__uses__']);
+//        foreach ($uses as $use) {
+//            $phpClass->addUse($use);
+//        }
 
         $rawProperties = $data['properties'];
         foreach ($rawProperties as $rawProperty) {
@@ -46,6 +46,11 @@ class TypeObjectBuilder implements BuilderInterface
         if (isset($rawProperty['required'])) {
             $property->addPhpDoc('@required');
         }
+
+        if (isset($rawProperty['__link__'])) {
+            $property->addPhpDoc('@see', $rawProperty['__link__']);
+        }
+
         return $property;
     }
 }

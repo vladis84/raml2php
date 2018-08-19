@@ -32,7 +32,7 @@ if (!is_writable($outputDir)) {
 }
 
 if ($filePath) {
-    $rawData = YamlParser::parse($filePath);
+    $rawData = RamlParser::parse($filePath);
 
     $parser = new Parser();
     $data = $parser->parse($rawData, $nameSpace);

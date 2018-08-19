@@ -10,9 +10,8 @@ class TypeEnumBuilder implements BuilderInterface
     public function build(array $data): PhpClass
     {
         $phpClass = new PhpClass();
-        $name = $data['__name__'] . 'Enum';
         $phpClass
-            ->setName($name)
+            ->setName($data['__name__'])
             ->setNamespace($data['__nameSpace__'])
         ;
 

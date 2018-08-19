@@ -5,7 +5,7 @@
  * Разбирает RAML
  *
  */
-class YamlParser
+class RamlParser
 {
     /**
      * @param string $filePath
