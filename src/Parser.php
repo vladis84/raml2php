@@ -67,11 +67,11 @@ class Parser
                 $enum = $property;
 
                 $enum['__name__']         = $type['__name__'] . ucfirst($property['__name__']) . 'Enum';
-                $enum['__nameSpace__']    = $type['__nameSpace__'];
-                $enum['__relativePath__'] = $type['__relativePath__'];
+                $enum['__nameSpace__']    = "\\{$this->rootNameSpace}\\Enum";
+                $enum['__relativePath__'] = 'Enum';
                 $enum['type']             = 'enum';
 
-                $property['__link__'] = '\\' . $enum['__nameSpace__'] . '\\' . $enum['__name__'];
+                $property['__link__'] = $enum['__nameSpace__'] . '\\' . $enum['__name__'];
 
                 $this->data['types'][] = $enum;
             }
