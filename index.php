@@ -17,7 +17,7 @@ while ($param = array_shift($argv)) {
             $outputDir = $paramValue;
             break;
 
-        case '--name-space':
+        case '--namespace':
             $nameSpace = $paramValue;
             break;
     }
@@ -34,10 +34,10 @@ if (!is_writable($outputDir)) {
 if ($filePath) {
     $rawData = RamlParser::parse($filePath);
 
-    $parser = new Parser();
-    $data = $parser->parse($rawData, $nameSpace);
+    $parser     = new Parser();
+    $phpClasses = $parser->parse($rawData, $nameSpace);
 
-    $writer = new Writer($outputDir);
-    $writer->write($data);
+    $writer = new Writer($outputDir, $nameSpace);
+    $writer->write($phpClasses);
 }
 

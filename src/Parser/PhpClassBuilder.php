@@ -1,33 +1,34 @@
 <?php
 
-namespace Writer;
+namespace Parser;
 
 use PhpCodeMaker\PhpClass;
 use PhpCodeMaker\PhpClass\Property;
 
-class TypeObjectBuilder implements BuilderInterface
+class PhpClassBuilder
 {
-    public function build(array $data): PhpClass
+    private static $typeMap = [
+        'number' => 'float',
+        'integer' => 'int',
+        'date-only' => 'string Y-m-d'
+    ];
+
+    public static function build(array $data): PhpClass
     {
         $phpClass = new PhpClass();
         $phpClass->setName($data['__name__']);
         $phpClass->setNamespace($data['__nameSpace__']);
 
-//        $uses = array_unique($data['__uses__']);
-//        foreach ($uses as $use) {
-//            $phpClass->addUse($use);
-//        }
-
         $rawProperties = $data['properties'];
         foreach ($rawProperties as $rawProperty) {
-            $property = $this->makeProperty($rawProperty);
+            $property = self::makeProperty($rawProperty);
             $phpClass->addProperty($property);
         }
 
         return $phpClass;
     }
 
-    private function makeProperty(array $rawProperty): Property
+    private static function makeProperty(array $rawProperty): Property
     {
         $property = new Property();
         $property->setName($rawProperty['__name__']);
@@ -36,7 +37,7 @@ class TypeObjectBuilder implements BuilderInterface
             $property->addPhpDoc($rawProperty['description']);
         }
 
-        $propertyType = $rawProperty['type'];
+        $propertyType = strtr($rawProperty['type'], self::$typeMap);
         if (isset($rawProperty['example'])) {
             $examples = (array) $rawProperty['example'];
             $propertyType .= ' ' . join(', ', $examples);

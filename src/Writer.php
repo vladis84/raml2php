@@ -1,24 +1,31 @@
 <?php
 
-use Writer\TypeBuilderFactory;
+use Parser\TypeBuilderFactory;
 
 class Writer
 {
     private $outputDir;
 
-    public function __construct($outputDir)
+    private $rootNamespace;
+
+    public function __construct($outputDir, $rootNamespace)
     {
         $this->outputDir = $outputDir;
+        $this->rootNamespace = $rootNamespace;
     }
 
-    public function write(array $data)
+    /**
+     * @param \PhpCodeMaker\PhpClass[] $phpClasses
+     */
+    public function write(array $phpClasses)
     {
-        foreach ($data['types'] as $type) {
-            $builder  = TypeBuilderFactory::make($type);
-            $phpClass = $builder->build($type);
+        foreach ($phpClasses as $phpClass) {
+            $nameSpace = $phpClass->getNameSpace()->getName();
+            $relativeNamespace = str_replace($this->rootNamespace, '' , $nameSpace);
+            $dir = $this->outputDir . '/' . str_replace('\\', '/', $relativeNamespace);
 
-            $dir = $this->outputDir . '/' . $type['__relativePath__'];
             @mkdir($dir, 0777, true);
+
             $fileName = sprintf('%s/%s.php', $dir, $phpClass->getName());
             file_put_contents($fileName, $phpClass);
         }

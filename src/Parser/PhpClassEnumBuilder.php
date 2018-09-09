@@ -1,13 +1,13 @@
 <?php
 
-namespace Writer;
+namespace Parser;
 
 use PhpCodeMaker\PhpClass;
 use PhpCodeMaker\PhpClass\Constant;
 
-class TypeEnumBuilder implements BuilderInterface
+class PhpClassEnumBuilder
 {
-    public function build(array $data): PhpClass
+    public static function build(array $data): PhpClass
     {
         $phpClass = new PhpClass();
         $phpClass
@@ -16,12 +16,12 @@ class TypeEnumBuilder implements BuilderInterface
         ;
 
         $constants = $data['enum'];
-        $this->addConstants($phpClass, $constants);
+        self::addConstants($phpClass, $constants);
 
         return $phpClass;
     }
 
-    private function addConstants(PhpClass $phpClass, array $rawConstants)
+    private static function addConstants(PhpClass $phpClass, array $rawConstants)
     {
         foreach ($rawConstants as $rawConstant) {
             $constant = new Constant();
@@ -34,5 +34,4 @@ class TypeEnumBuilder implements BuilderInterface
             $phpClass->addConstant($constant);
         }
     }
-
 }

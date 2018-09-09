@@ -28,7 +28,6 @@ class RamlParser
 
                 $yaml['__nameSpace__']    = str_replace('/', '\\', $relativePath);
                 $yaml['__name__']         = preg_replace('/\..+/', '', $filePath);
-                $yaml['__relativePath__'] = $relativePath;
             }
 
             chdir($prevCwd);

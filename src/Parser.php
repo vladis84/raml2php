@@ -1,8 +1,12 @@
 <?php
 
+use Parser\PhpClassBuilder;
+use Parser\PhpClassEnumBuilder;
+use PhpCodeMaker\PhpClass;
+
 class Parser
 {
-    private $data = ['types' => [], 'operations' => [], 'requests' => [], 'responses' => []];
+    private $phpClasses = [];
 
     /**
      * @var string
@@ -17,23 +21,22 @@ class Parser
         foreach ($types as $rawTypeName => $rawType) {
             $rawType['__name__']         = $rawTypeName;
             $rawType['__nameSpace__']    = $rootNameSpace;
-            $rawType['__relativePath__'] = '';
 
             $type = $this->parseType($rawType);
 
-            $this->data['types'][] = $type;
+            $this->phpClasses[] = $type;
         }
 
         foreach ($rawData as $operationName => $rawOperation) {
             if (strpos($operationName, '/') === 0) {
-                $this->data['operations'] = $this->parseOperation($operationName, $rawOperation);
+                $this->parseOperation($operationName, $rawOperation);
             }
         }
 
-        return $this->data;
+        return $this->phpClasses;
     }
 
-    private function parseType(array $rawType): array
+    private function parseType(array $rawType): PhpClass
     {
         $type = $rawType;
 
@@ -46,7 +49,7 @@ class Parser
             $type['properties'] = $properties;
         }
 
-        return $type;
+        return PhpClassBuilder::build($type);
     }
 
     private function parseProperties(array $rawProperties, array $type): array
@@ -67,17 +70,15 @@ class Parser
                 $enum = $property;
 
                 $enum['__name__']         = $type['__name__'] . ucfirst($property['__name__']) . 'Enum';
-                $enum['__nameSpace__']    = "\\{$this->rootNameSpace}\\Enum";
-                $enum['__relativePath__'] = 'Enum';
-                $enum['type']             = 'enum';
+                $enum['__nameSpace__']    = "{$this->rootNameSpace}\\Enum";
 
-                $property['__link__'] = $enum['__nameSpace__'] . '\\' . $enum['__name__'];
+                $property['__link__'] = '\\' . $enum['__nameSpace__'] . '\\' . $enum['__name__'];
 
-                $this->data['types'][] = $enum;
+                $this->phpClasses[] = PhpClassEnumBuilder::build($enum);
             }
 
             // Массивы объектов
-            if (isset($property['items']) && $property['items']['type'] == 'object') {
+            if (isset($property['items']) && $property['type'] == 'array') {
                 $property['type'] = sprintf(
                     $fullNameTemplate,
                     $property['items']['__nameSpace__'],
@@ -85,7 +86,7 @@ class Parser
                 );
                 $property['type'] .= '[]';
 
-                $this->data['types'][] = $this->parseType($property['items']);
+                $this->phpClasses[] = $this->parseType($property['items']);
             }
 
             $propertyType = $rawProperty['type'] ?? 'string';
@@ -99,6 +100,10 @@ class Parser
                 preg_match('/^[A-Z]/', $propertyType)
             ) {
                 $property['type'] = '\\' . $this->rootNameSpace . '\\' . $property['type'];
+            }
+
+            if (isset($property['items'])) {
+                /*@todo Доделать массивы*/
             }
 
             if (is_string($propertyType)) {
@@ -115,11 +120,11 @@ class Parser
             $diff = array_diff_assoc($childProperties, $parentProperties);
 
             if ($diff) {// extends
-                $property['__extends__'] = sprintf($fullNameTemplate, $parent['__nameSpace__'], $parent['__name__']);
-                $this->data['types'][]   = $this->parseType($parent);
+                $property['__extends__']     = sprintf($fullNameTemplate, $parent['__nameSpace__'], $parent['__name__']);
+                $this->phpClasses[] = $this->parseType($parent);
             } elseif ($parentProperties) { // include
-                $property['type']      = sprintf($fullNameTemplate, $parent['__nameSpace__'], $parent['__name__']);
-                $this->data['types'][] = $this->parseType($parent);
+                $property['type']            = sprintf($fullNameTemplate, $parent['__nameSpace__'], $parent['__name__']);
+                $this->phpClasses[] = $this->parseType($parent);
             } else {
                 unset($child['type']);
                 $property = array_merge($parent, $child);
@@ -141,13 +146,13 @@ class Parser
         }
 
         $rawOperationData = current($rawOperation);
+
         $rawOperationBody = $rawOperationData['body'] ?? [];
         $rawRequest       = current($rawOperationBody);
         if ($rawRequest) {
             $rawRequest['__name__']         = $operationName . 'Request';
             $rawRequest['__nameSpace__']    = $this->rootNameSpace . '\\Request';
-            $rawRequest['__relativePath__'] = 'Request';
-            $this->data['types'][]          = $this->parseType($rawRequest);
+            $this->phpClasses[]    = $this->parseType($rawRequest);
         }
 
         $rawResponse = $rawOperationData['responses']['200']['body']['application/json'] ?? [];
@@ -157,8 +162,7 @@ class Parser
             }
             $rawResponse['__name__']         = $operationName . 'Response';
             $rawResponse['__nameSpace__']    = $this->rootNameSpace . '\\Response';
-            $rawResponse['__relativePath__'] = 'Response';
-            $this->data['types'][]           = $this->parseType($rawResponse);
+            $this->phpClasses[]     = $this->parseType($rawResponse);
         }
     }
 }
