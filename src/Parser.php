@@ -106,6 +106,10 @@ class Parser
                 /*@todo Доделать массивы*/
             }
 
+            if ($propertyType == 'object') {
+                $this->phpClasses[] = $this->parseType($property);
+            }
+
             if (is_string($propertyType)) {
                 $properties[] = $property;
                 continue;
