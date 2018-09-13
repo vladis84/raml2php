@@ -29,6 +29,7 @@ class Parser
 
         foreach ($rawData as $operationName => $rawOperation) {
             if (strpos($operationName, '/') === 0) {
+                $operationName = current($rawOperation)['displayName'] ?? $operationName;
                 $this->parseOperation($operationName, $rawOperation);
             }
         }
@@ -151,8 +152,15 @@ class Parser
 
         $rawOperationData = current($rawOperation);
 
-        $rawOperationBody = $rawOperationData['body'] ?? [];
-        $rawRequest       = current($rawOperationBody);
+        $rawRequest = [];
+        if (isset($rawOperationData['body'])) {
+            $rawRequest = current($rawOperationData['body']);
+        }
+
+        if (isset($rawOperationData['queryParameters'])) {
+            $rawRequest =  ['properties' => $rawOperationData['queryParameters'], 'type' => 'object'];
+        }
+
         if ($rawRequest) {
             $rawRequest['__name__']         = $operationName . 'Request';
             $rawRequest['__nameSpace__']    = $this->rootNameSpace . '\\Request';
