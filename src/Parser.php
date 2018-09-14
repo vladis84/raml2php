@@ -29,7 +29,6 @@ class Parser
 
         foreach ($rawData as $operationName => $rawOperation) {
             if (strpos($operationName, '/') === 0) {
-                $operationName = current($rawOperation)['displayName'] ?? $operationName;
                 $this->parseOperation($operationName, $rawOperation);
             }
         }
@@ -103,12 +102,10 @@ class Parser
                 $property['type'] = '\\' . $this->rootNameSpace . '\\' . $property['type'];
             }
 
-            if (isset($property['items'])) {
-                /*@todo Доделать массивы*/
-            }
-
             if ($propertyType == 'object') {
-                $this->phpClasses[] = $this->parseType($property);
+                $phpClass =  $this->parseType($property);
+                $property['type'] = $phpClass->getNameSpace()->getName() . '\\' . $phpClass->getName();
+                $this->phpClasses[] = $phpClass;
             }
 
             if (is_string($propertyType)) {
@@ -141,7 +138,7 @@ class Parser
         return $properties;
     }
 
-    private function parseOperation(string $rawOperationName, array $rawOperation)
+    private function parseOperation(string $rawOperationName, array &$rawOperation)
     {
         $rawOperationName    = preg_replace('/{.+}/', '', $rawOperationName);
         $operationName       = '';
@@ -150,7 +147,11 @@ class Parser
             $operationName .= ucfirst($operationNameWorld);
         }
 
-        $rawOperationData = current($rawOperation);
+        $operationType = key($rawOperation);
+        $operationName .=ucfirst($operationType);
+
+        $rawOperationData = array_shift($rawOperation);
+        $operationName    = $rawOperationData['displayName'] ?? $operationName;
 
         $rawRequest = [];
         if (isset($rawOperationData['body'])) {
@@ -175,6 +176,11 @@ class Parser
             $rawResponse['__name__']         = $operationName . 'Response';
             $rawResponse['__nameSpace__']    = $this->rootNameSpace . '\\Response';
             $this->phpClasses[]     = $this->parseType($rawResponse);
+        }
+
+        // На один url есть разные типы запросов.
+        if (count($rawOperation) >= 1) {
+            $this->parseOperation($rawOperationName, $rawOperation);
         }
     }
 }

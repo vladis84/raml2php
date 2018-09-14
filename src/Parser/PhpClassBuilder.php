@@ -16,7 +16,7 @@ class PhpClassBuilder
     public static function build(array $data): PhpClass
     {
         $phpClass = new PhpClass();
-        $phpClass->setName($data['__name__']);
+        $phpClass->setName(ucfirst($data['__name__']));
         $phpClass->setNamespace($data['__nameSpace__']);
 
         $rawProperties = $data['properties'];
