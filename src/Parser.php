@@ -19,8 +19,8 @@ class Parser
 
         $types = $rawData['types'] ?? [];
         foreach ($types as $rawTypeName => $rawType) {
-            $rawType['__name__']         = $rawTypeName;
-            $rawType['__nameSpace__']    = $rootNameSpace;
+            $rawType['__name__']      = $rawTypeName;
+            $rawType['__nameSpace__'] = $rootNameSpace;
 
             $type = $this->parseType($rawType);
 
@@ -69,8 +69,8 @@ class Parser
             if (isset($property['enum'])) {
                 $enum = $property;
 
-                $enum['__name__']         = $type['__name__'] . ucfirst($property['__name__']) . 'Enum';
-                $enum['__nameSpace__']    = "{$this->rootNameSpace}\\Enum";
+                $enum['__name__']      = $type['__name__'] . ucfirst($property['__name__']) . 'Enum';
+                $enum['__nameSpace__'] = "{$this->rootNameSpace}\\Enum";
 
                 $property['__link__'] = '\\' . $enum['__nameSpace__'] . '\\' . $enum['__name__'];
 
@@ -78,7 +78,7 @@ class Parser
             }
 
             // Массивы объектов
-            if (isset($property['items']) && $property['type'] == 'array') {
+            if ($property['type'] == 'array' && isset($property['items'])) {
                 $property['type'] = sprintf(
                     $fullNameTemplate,
                     $property['items']['__nameSpace__'],
@@ -103,8 +103,8 @@ class Parser
             }
 
             if ($propertyType == 'object') {
-                $phpClass =  $this->parseType($property);
-                $property['type'] = $phpClass->getNameSpace()->getName() . '\\' . $phpClass->getName();
+                $phpClass           = $this->parseType($property);
+                $property['type']   = $phpClass->getNameSpace()->getName() . '\\' . $phpClass->getName();
                 $this->phpClasses[] = $phpClass;
             }
 
@@ -122,10 +122,10 @@ class Parser
             $diff = array_diff_assoc($childProperties, $parentProperties);
 
             if ($diff) {// extends
-                $property['__extends__']     = sprintf($fullNameTemplate, $parent['__nameSpace__'], $parent['__name__']);
-                $this->phpClasses[] = $this->parseType($parent);
+                $property['__extends__'] = sprintf($fullNameTemplate, $parent['__nameSpace__'], $parent['__name__']);
+                $this->phpClasses[]      = $this->parseType($parent);
             } elseif ($parentProperties) { // include
-                $property['type']            = sprintf($fullNameTemplate, $parent['__nameSpace__'], $parent['__name__']);
+                $property['type']   = sprintf($fullNameTemplate, $parent['__nameSpace__'], $parent['__name__']);
                 $this->phpClasses[] = $this->parseType($parent);
             } else {
                 unset($child['type']);
@@ -148,10 +148,13 @@ class Parser
         }
 
         $operationType = key($rawOperation);
-        $operationName .=ucfirst($operationType);
+        $operationName .= ucfirst($operationType);
 
         $rawOperationData = array_shift($rawOperation);
-        $operationName    = $rawOperationData['displayName'] ?? $operationName;
+
+        if (isset($rawOperationData['displayName'])) {
+            $operationName = $rawOperationData['displayName'];
+        }
 
         $rawRequest = [];
         if (isset($rawOperationData['body'])) {
@@ -159,23 +162,33 @@ class Parser
         }
 
         if (isset($rawOperationData['queryParameters'])) {
-            $rawRequest =  ['properties' => $rawOperationData['queryParameters'], 'type' => 'object'];
-        }
-
-        if ($rawRequest) {
-            $rawRequest['__name__']         = $operationName . 'Request';
-            $rawRequest['__nameSpace__']    = $this->rootNameSpace . '\\Request';
-            $this->phpClasses[]    = $this->parseType($rawRequest);
+            $rawRequest = ['properties' => $rawOperationData['queryParameters'], 'type' => 'object'];
         }
 
         $rawResponse = $rawOperationData['responses']['200']['body']['application/json'] ?? [];
+        $response    = null;
         if ($rawResponse) {
             if (is_string($rawResponse['type']) && preg_match('/^[A-Z]/', $rawResponse['type'])) {
                 $rawResponse['type'] = '\\' . $this->rootNameSpace . '\\' . $rawResponse['type'];
             }
-            $rawResponse['__name__']         = $operationName . 'Response';
-            $rawResponse['__nameSpace__']    = $this->rootNameSpace . '\\Response';
-            $this->phpClasses[]     = $this->parseType($rawResponse);
+            $rawResponse['__name__']      = $operationName . 'Response';
+            $rawResponse['__nameSpace__'] = $this->rootNameSpace . '\\Response';
+
+            $response           = $this->parseType($rawResponse);
+            $this->phpClasses[] = $response;
+        }
+
+        if ($rawRequest) {
+            $rawRequest['__name__']      = $operationName . 'Request';
+            $rawRequest['__nameSpace__'] = $this->rootNameSpace . '\\Request';
+
+            $request = $this->parseType($rawRequest);
+            if ($response) {
+                $responseName = $response->getNameSpace()->getName() . '\\' . $response->getName();
+                $request->addPhpDoc('@see', $responseName);
+            }
+
+            $this->phpClasses[] = $request;
         }
 
         // На один url есть разные типы запросов.
